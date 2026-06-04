@@ -467,11 +467,20 @@ function loadScavenger() {
   const file = path.join(LEGACY.scavenger, 'index.js');
   loadCommonJsEntrypoint('Squigs Scavenger Hunt', file, (source) => {
     const admins = parseList(process.env.UGLYBOT2_ADMIN_USER_IDS || process.env.ADMIN_USER_IDS || process.env.DEFAULT_ADMIN_USER || process.env.GAUNTLET_ADMINS);
+    const dataDir = path.join(LEGACY.scavenger, 'data').replace(/\\/g, '/');
+    const popularWheel = path.join(dataDir, 'squigs_trait_wheel_popular.json').replace(/\\/g, '/');
+    const allWheel = path.join(dataDir, 'squigs_trait_wheel_all.json').replace(/\\/g, '/');
     return source
       .replace(
         /const ALLOWED_USERS = new Set\(\[[\s\S]*?\]\);/,
         `const ALLOWED_USERS = new Set(${JSON.stringify(admins)});`
       )
+      .replace(
+        /const DEFAULT_WHEEL_FILE = process\.env\.TRAIT_WHEEL_FILE \|\| '\.\/data\/squigs_trait_wheel_popular\.json';/,
+        `const DEFAULT_WHEEL_FILE = process.env.TRAIT_WHEEL_FILE || ${JSON.stringify(popularWheel)};`
+      )
+      .replace(/'\.\/data\/squigs_trait_wheel_popular\.json'/g, JSON.stringify(popularWheel))
+      .replace(/'\.\/data\/squigs_trait_wheel_all\.json'/g, JSON.stringify(allWheel))
       .replace(/await client\.login\(DISCORD_TOKEN\);/g, "await client.login(DISCORD_TOKEN);");
   });
 }
@@ -494,6 +503,13 @@ async function runTrialMigrations() {
 function loadTrials() {
   if (!FEATURE_FLAGS.trials) return;
   try {
+    const missing = missingTrialEnv();
+    if (missing.length) {
+      const msg = `[trials] skipped; missing env vars: ${missing.join(', ')}`;
+      bootErrors.push(msg);
+      console.warn(`[UglyBot2] Squig Trials skipped: missing env vars: ${missing.join(', ')}`);
+      return;
+    }
     const CONFIG = buildTrialsConfig();
     const trialPool = new Pool({ connectionString: CONFIG.databaseUrl, ssl: PGSSL ? { rejectUnauthorized: false } : false });
     const localRequire = (request) => {
@@ -575,6 +591,21 @@ function buildTrialsConfig() {
   };
 }
 
+function missingTrialEnv() {
+  return [
+    'GUILD_ID',
+    'DATABASE_URL',
+    'LIVE_TRIALS_CHANNEL_ID',
+    'PAST_TRIALS_CHANNEL_ID',
+    'SUBMISSIONS_CHANNEL_ID',
+    'IMAGE_SUBMIT_CHANNEL_ID',
+    'GENERAL_CHAT_CHANNEL_ID',
+    'DRIP_API_KEY',
+    'DRIP_REALM_ID',
+    'DRIP_CURRENCY_ID',
+  ].filter((name) => !process.env[name]);
+}
+
 function buildTrialTimeModule() {
   return {
     parseDurationToMs(input) {
@@ -632,7 +663,13 @@ function buildTrialsDripModule(CONFIG) {
 
 function loadUglyBot() {
   if (!FEATURE_FLAGS.uglybot) return;
-  loadCommonJsEntrypoint('UglyBot', path.join(LEGACY.uglybot, 'index.js'));
+  loadCommonJsEntrypoint('UglyBot', path.join(LEGACY.uglybot, 'index.js'), (source) => {
+    const fontDir = path.join(LEGACY.uglybot, 'fonts').replace(/\\/g, '/');
+    return source.replace(
+      /const FONT_DIR = 'fonts';/,
+      `const FONT_DIR = ${JSON.stringify(fontDir)};`
+    );
+  });
 }
 
 client.on(Events.InteractionCreate, async (interaction) => {
