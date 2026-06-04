@@ -76,6 +76,7 @@ if (GUILD_IDS.length) {
 }
 const DATABASE_URL = process.env.UGLYBOT2_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || null;
 const PGSSL = String(process.env.PGSSL ?? 'true').toLowerCase() !== 'false';
+normalizeDatabaseEnv(DATABASE_URL);
 
 if (!DISCORD_TOKEN) throw new Error('Missing DISCORD_TOKEN, DISCORD_BOT_TOKEN, or BOT_TOKEN.');
 if (!CLIENT_ID) throw new Error('Missing DISCORD_CLIENT_ID, CLIENT_ID, or APPLICATION_ID.');
@@ -116,6 +117,31 @@ function aliasEnv(target, sources) {
       return;
     }
   }
+}
+
+function normalizeDatabaseEnv(databaseUrl) {
+  if (!databaseUrl) return;
+  if (!process.env.DATABASE_URL) process.env.DATABASE_URL = databaseUrl;
+  if (!process.env.POSTGRES_URL) process.env.POSTGRES_URL = databaseUrl;
+
+  const sharedDbAliases = [
+    'DATABASE_URL_HOLDERS',
+    'DATABASE_URL_TEAM',
+    'DATABASE_URL_POINTS',
+    'DATABASE_URL_CLAIMS',
+    'DATABASE_URL_PRIZES',
+    'GAUNTLET_DATABASE_URL',
+    'DATABASE_URL_DRIP',
+    'DATABASE_URL_IMAGE',
+    'DATABASE_URL_SURVIVAL',
+  ];
+
+  for (const key of sharedDbAliases) {
+    if (!process.env[key]) process.env[key] = databaseUrl;
+  }
+
+  if (!process.env.IMAGE_DB_SAFE) process.env.IMAGE_DB_SAFE = 'true';
+  console.log(`[UglyBot2] Database consolidation enabled: ${sharedDbAliases.length} legacy DB variables point to DATABASE_URL unless explicitly overridden.`);
 }
 
 function isAdmin(interaction) {
