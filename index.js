@@ -34,6 +34,7 @@ const {
   StringSelectMenuBuilder,
 } = require('discord.js');
 const { Pool } = require('pg');
+const REAL_DISCORD_JS = require('discord.js');
 
 const ROOT = __dirname;
 const LEGACY = {
@@ -58,6 +59,8 @@ aliasEnv('DISCORD_BOT_TOKEN', ['DISCORD_TOKEN', 'BOT_TOKEN']);
 aliasEnv('BOT_TOKEN', ['DISCORD_TOKEN', 'DISCORD_BOT_TOKEN']);
 aliasEnv('DISCORD_CLIENT_ID', ['CLIENT_ID', 'APPLICATION_ID']);
 aliasEnv('CLIENT_ID', ['DISCORD_CLIENT_ID', 'APPLICATION_ID']);
+aliasEnv('GUILD_ID', ['UGLYBOT2_GUILD_IDS', 'GUILD_IDS']);
+aliasEnv('GUILD_IDS', ['UGLYBOT2_GUILD_IDS', 'GUILD_ID']);
 aliasEnv('ALCHEMY_KEY', ['ALCHEMY_API_KEY']);
 aliasEnv('ALCHEMY_API_KEY', ['ALCHEMY_KEY']);
 aliasEnv('DEFAULT_ADMIN_USER', ['UGLYBOT2_ADMIN_USER_IDS', 'ADMIN_USER_IDS', 'GAUNTLET_ADMINS']);
@@ -67,6 +70,10 @@ aliasEnv('GAUNTLET_ADMINS', ['UGLYBOT2_ADMIN_USER_IDS', 'ADMIN_USER_IDS', 'DEFAU
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN || process.env.BOT_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID || process.env.APPLICATION_ID;
 const GUILD_IDS = parseList(process.env.UGLYBOT2_GUILD_IDS || process.env.GUILD_IDS || process.env.GUILD_ID);
+if (GUILD_IDS.length) {
+  process.env.GUILD_ID = GUILD_IDS[0];
+  process.env.GUILD_IDS = GUILD_IDS.join(',');
+}
 const DATABASE_URL = process.env.UGLYBOT2_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || null;
 const PGSSL = String(process.env.PGSSL ?? 'true').toLowerCase() !== 'false';
 
@@ -330,7 +337,6 @@ async function registerCombinedCommands() {
 }
 
 function patchedDiscordJs() {
-  const real = require('discord.js');
   class CapturingREST {
     constructor() { return this; }
     setToken() { return this; }
@@ -342,7 +348,7 @@ function patchedDiscordJs() {
   function SharedClient() {
     return client;
   }
-  return { ...real, Client: SharedClient, REST: CapturingREST };
+  return { ...REAL_DISCORD_JS, Client: SharedClient, REST: CapturingREST };
 }
 
 function withPatchedRequire(fn) {
