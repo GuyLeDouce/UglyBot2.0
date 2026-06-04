@@ -1,0 +1,2 @@
+ALTER TABLE trials
+  ADD COLUMN IF NOT EXISTS category TEXT;

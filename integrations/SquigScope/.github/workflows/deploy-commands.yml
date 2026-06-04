@@ -1,0 +1,30 @@
+name: Deploy Slash Commands
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run deploy-commands.js
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          ALCHEMY_KEY: ${{ secrets.ALCHEMY_KEY }}
+          SQUIGS_CONTRACT: ${{ secrets.SQUIGS_CONTRACT }}
+          TEST_GUILD_ID: ${{ secrets.TEST_GUILD_ID }}
+          UGLY_GUILD_ID: ${{ secrets.UGLY_GUILD_ID }}
+        run: node deploy-commands.js

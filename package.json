@@ -1,0 +1,23 @@
+{
+  "name": "uglybot2",
+  "version": "1.0.0",
+  "description": "Unified UglyBot runtime combining UglyBot, The Gauntlet, Squig Trials, Squigs Scavenger Hunt, and Squig Scope.",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js"
+  },
+  "engines": {
+    "node": "20.x"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.90",
+    "axios": "^1.6.8",
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.2.3",
+    "ethers": "^6.10.0",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.16.3"
+  }
+}
