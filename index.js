@@ -496,7 +496,19 @@ function loadScavenger() {
     const dataDir = path.join(LEGACY.scavenger, 'data').replace(/\\/g, '/');
     const popularWheel = path.join(dataDir, 'squigs_trait_wheel_popular.json').replace(/\\/g, '/');
     const allWheel = path.join(dataDir, 'squigs_trait_wheel_all.json').replace(/\\/g, '/');
+    const scavengerBase = LEGACY.scavenger.replace(/\\/g, '/');
     return source
+      .replace(
+        /function loadWheelFromFile\(path\) \{/,
+        `function normalizeWheelPath(path) {
+  const raw = String(path || '').trim();
+  if (!raw) return raw;
+  if (/^(?:[a-z]+:)?\\/\\//i.test(raw) || /^\\/|^[A-Za-z]:[\\\\/]/.test(raw)) return raw;
+  return require('path').join(${JSON.stringify(scavengerBase)}, raw).replace(/\\\\/g, '/');
+}
+function loadWheelFromFile(path) {
+  path = normalizeWheelPath(path);`
+      )
       .replace(
         /const ALLOWED_USERS = new Set\(\[[\s\S]*?\]\);/,
         `const ALLOWED_USERS = new Set(${JSON.stringify(admins)});`
